@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 @Entity
 @Getter
@@ -45,8 +45,8 @@ public class Sale {
     private double installmentPrice;
 
     @NotBlank
-    @Column(name = "payed_value", nullable = false)
-    private int payedValue; // Amount paid at the time of purchase
+    @Column(name = "initial_payed_value", nullable = false)
+    private double initialPaymentValue; // Amount paid at the time of purchase
 
     //TODO: create the method to calculate the pending amount
     @NotBlank
@@ -59,7 +59,42 @@ public class Sale {
 
     @NotBlank
     @Column(name = "sale_date", nullable = false)
-    private Date saleDate; // THe date the sale occur
+    private LocalDate saleDate; // THe date the sale occur
 
+    public Sale(){}
 
+    public Sale(String clientName, double purchasePrice, int percentage, int installments, double initialPaymentValue) {
+        this.clientName = clientName;
+        this.purchasePrice = purchasePrice;
+        this.percentage = percentage;
+        this.installments = installments;
+        this.initialPaymentValue = initialPaymentValue;
+        this.saleDate = LocalDate.now();
+
+        calcSalePrice();
+
+        if(this.initialPaymentValue != 0.0) {
+            initialCalcPendingAmount();
+        }
+
+        if(pendingAmount > 0.0 && installments > 0) {
+            calcInstallmentPrice();
+            this.finished = false;
+        } else {
+            this.finished = true;
+        }
+    }
+    
+    private void calcSalePrice() {
+        this.salePrice = ((double) this.percentage / 100) * this.purchasePrice + purchasePrice;
+    }
+
+    private void calcInstallmentPrice() {
+        this.installmentPrice = this.pendingAmount / installments;
+    }
+
+    //To calculate the rest of the value taking off the initial amount payed in the sale
+    private void initialCalcPendingAmount() {
+        this.pendingAmount = salePrice - initialPaymentValue;
+    }
 }
